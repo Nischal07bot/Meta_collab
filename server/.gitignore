@@ -1,0 +1,40 @@
+# Node modules
+node_modules/
+
+# Environment variables (API keys, DB URLs, etc.)
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE/editor directories
+.vscode/
+.idea/
+
+# Optional: if using TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# Optional: if using PM2 for deployment
+pids
+*.pid
+*.seed
+
+# Optional: database files (if using SQLite, etc.)
+*.sqlite
+*.db
+
+# Optional: test coverage
+coverage/
+
+# Mac .Trash folder (optional)
+.Trashes
