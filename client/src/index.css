@@ -16,7 +16,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 html, body {
   margin: 0;
   padding: 0;
@@ -28,86 +27,19 @@ html, body {
 #root {
   height: 100%;
   width: 100%;
+  min-height: 100vh;
 }
 
-/* Star animations */
-@keyframes drift-slow {
-  0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  25% {
-    transform: translate(10px, -10px) rotate(90deg);
-  }
-  50% {
-    transform: translate(-5px, 15px) rotate(180deg);
-  }
-  75% {
-    transform: translate(-15px, -5px) rotate(270deg);
-  }
+/* Ensure full viewport coverage */
+body {
+  background-color: #1d4ed8; /* blue-700 */
 }
 
-@keyframes drift-med {
-  0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  33% {
-    transform: translate(15px, -5px) rotate(120deg);
-  }
-  66% {
-    transform: translate(-10px, 10px) rotate(240deg);
-  }
-}
-
-.animate-drift-slow {
-  animation: drift-slow 20s ease-in-out infinite;
-}
-
-.animate-drift-med {
-  animation: drift-med 15s ease-in-out infinite;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
+/* Remove any default button styles */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  border: none;
+  outline: none;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
