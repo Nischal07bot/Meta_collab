@@ -3,7 +3,7 @@ import React from "react";
 
 const LandingPage = () => {
   return (
-    <div className="fixed inset-0 w-full h-full bg-gradient-to-b from-indigo-900 to-blue-700">
+    <div className="fixed inset-0 w-full h-full flex bg-gradient-to-b from-indigo-900 to-blue-700">
       {/* Starry background wrapper */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Star 6 */}
@@ -100,12 +100,17 @@ const LandingPage = () => {
       </div>
 
       {/* Main content */}
+       <div className="w-1/2">
       <div className="relative z-10 flex flex-col h-full items-center justify-center text-center text-white px-4">
         <h1 className="text-4xl md:text-6xl font-bold mb-6">Welcome to Virtual HQ</h1>
         <p className="text-lg md:text-xl mb-8 opacity-90 mb-30 px-30">Bring your remote team together</p>
         <button className="bg-green-300 text-blue-700 w-30 h-15 px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
           Get Started
         </button>
+      </div>
+      </div>
+      <div className="w-1/2">
+      
       </div>
     </div>
   );
