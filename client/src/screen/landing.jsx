@@ -1,9 +1,10 @@
 // LandingPage.jsx
 import React from "react";
-
+import demo from "../assets/demo.mp4"
+import Character from "./Character.jsx";
 const LandingPage = () => {
   return (
-    <div className="fixed inset-0 w-full h-full flex bg-gradient-to-b from-indigo-900 to-blue-700">
+    <div className="fixed inset-0 w-full h-full grid grid-cols-1 md:grid-cols-2 bg-gradient-to-b from-indigo-950 to-">
       {/* Starry background wrapper */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Star 6 */}
@@ -100,18 +101,36 @@ const LandingPage = () => {
       </div>
 
       {/* Main content */}
-       <div className="w-1/2">
       <div className="relative z-10 flex flex-col h-full items-center justify-center text-center text-white px-4">
-        <h1 className="text-4xl md:text-6xl font-bold mb-6">Welcome to Virtual HQ</h1>
-        <p className="text-lg md:text-xl mb-8 opacity-90 mb-30 px-30">Bring your remote team together</p>
+        <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          Welcome to Virtual HQ
+        </h1>
+        <p className="text-lg md:text-xl mb-8 opacity-90 mb-30 px-30">
+          Bring your remote team together
+        </p>
         <button className="bg-green-300 text-blue-700 w-30 h-15 px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
           Get Started
         </button>
+        <div className="mt-8">
+          <Character />
+        </div>
       </div>
-      </div>
-      <div className="w-1/2">
       
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="w-96 h-64 rounded-lg overflow-hidden  shadow-2xl">
+          <video
+            src={demo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="https://cdn.prod.website-files.com/63c885e8fb810536398b658a/645bf7b13ac3a54d23fb33ad_Screenshot%202023-05-10%20125910.jpg"
+            className="w-full h-full  border-radius-2xl object-cover"
+          />
+        </div>
       </div>
+      
+      {/* Character - positioned outside grid for full screen movement */}
     </div>
   );
 };
