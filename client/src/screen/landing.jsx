@@ -138,17 +138,6 @@ const LandingPage = () => {
       </div>
       
       {/* Second section */}
-      <div className="relative z-10 w-full min-h-screen bg--300 text-gray-900 flex flex-col items-center justify-center px-8">
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">What We Offer</h2>
-        <p className="max-w-3xl text-lg text-center leading-relaxed mb-10">
-          Virtual HQ makes remote work feel connected. Collaborate, interact,
-          and build relationships with your team through immersive spaces.
-        </p>
-        <button className="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors">
-          Learn More
-        </button>
-      </div>
-      <div className="h-[200vh] bg-red-100"></div> 
     </div>
   );
 };

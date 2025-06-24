@@ -9,7 +9,6 @@ const directionMap = {
   right: 2,
   up: 3,
 };
-
 const Character = () => {
   const [direction, setDirection] = useState("down");
   const [row,setrow]=useState(0);
