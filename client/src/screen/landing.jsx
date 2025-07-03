@@ -3,8 +3,9 @@ import React from "react";
 import demo from "../assets/demo.mp4"
 import Character from "./Character.jsx";
 import Navbar from "./Navbar.jsx"
-
+import { useNavigate } from "react-router-dom";
 const LandingPage = () => {
+  const navigate = useNavigate();
   return (
     <div className="relative min-h-screen  no-scrollbar">
       <Navbar />
@@ -114,7 +115,7 @@ const LandingPage = () => {
           <p className="text-lg md:text-xl mb-8 opacity-90">
             Bring your remote team together
           </p>
-          <button className="bg-green-300 text-blue-700 px-8 py-3 w-30 h-8 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+          <button onClick={() => navigate("/game")} className="bg-green-300 text-blue-700 px-8 py-3 w-30 h-8 rounded-lg font-semibold hover:bg-green-700 transition-colors">
             Get Started
           </button>
           <div className="mt-8">

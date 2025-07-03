@@ -1,17 +1,14 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Landing from './screen/landing'
+import { Routes, Route } from "react-router-dom";
+import LandingPage from "./screen/landing";
+import GamePage from "./screen/game";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <Landing/>
-    </>
-  )
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/game" element={<GamePage />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
