@@ -1,13 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-export default function Login() {
+import axios from "axios";
+export default function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
+  const url="http://localhost:3000";
   const handleLogin = () => {
-    navigate("/game");
+    axios.post(`${url}/users/register`,{email:username,password:password}).then((res)=>{
+      if(res.status===201)
+      {
+        console.log(res.data);
+        localStorage.setItem("token",res.data.token);
+        navigate("/login");
+      }
+    })
   };
 
   return (

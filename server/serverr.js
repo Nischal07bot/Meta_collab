@@ -4,14 +4,7 @@ import {Server} from "socket.io";
 import {createServer} from "http";
 import dotenv from "dotenv";
 import cors from "cors";
-dotenv.config();
-const app=express();
-app.use(express.json());
-app.use(cors({
-    origin:"http://localhost:5173",
-    methods:["GET","POST","PUT","DELETE"],
-    credentials:true,
-}));
+import app from "./app.js"
 const server=createServer(app);
 const io=new Server(server,{
     cors:{
@@ -23,6 +16,14 @@ const io=new Server(server,{
 
 const players={};
 io.on("connection",(socket)=>{
+    socket.on("joinRoom", (roomId) => {
+        socket.join(roomId); 
+        console.log(`${socket.id} joined room ${roomId}`);
+      });
+      socket.on("leaveRoom", (roomId) => {
+        socket.leave(roomId);
+        console.log(`${socket.id} left room ${roomId}`);
+      });
     console.log("a user connected",socket.id); 
     players[socket.id]={x:0,y:0,avataridx:0};
     socket.emit("otherplayers",players);
