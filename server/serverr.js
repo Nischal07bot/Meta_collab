@@ -16,14 +16,6 @@ const io=new Server(server,{
 
 const players={};
 io.on("connection",(socket)=>{
-    socket.on("joinRoom", (roomId) => {
-        socket.join(roomId); 
-        console.log(`${socket.id} joined room ${roomId}`);
-      });
-      socket.on("leaveRoom", (roomId) => {
-        socket.leave(roomId);
-        console.log(`${socket.id} left room ${roomId}`);
-      });
     console.log("a user connected",socket.id); 
     players[socket.id]={x:0,y:0,avataridx:0};
     socket.emit("otherplayers",players);
@@ -40,15 +32,9 @@ io.on("connection",(socket)=>{
         delete players[socket.id];
         io.emit("playerdisconnect",socket.id);
     })
-    socket.on("disconnect",()=>{
-        console.log("a user disconnected",socket.id);
-        delete players[socket.id];
-        io.emit("playerdisconnect",socket.id);
-    })
 });
 const PORT=process.env.PORT || 3000;
 
 server.listen(PORT,()=>{
     console.log(`Server is running on http://localhost:${PORT}`);
 })
-
