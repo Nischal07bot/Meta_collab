@@ -15,7 +15,6 @@ function setupsprite(startidx)
     };
 }
 
-
 let arr = [936, 940, 944, 948, 952, 956, 960, 964];
 
 export default function GamePage() {
@@ -40,7 +39,6 @@ export default function GamePage() {
                 background: [49, 16, 79],
                 scale: 1,
             });
-
             k.loadSprite("spritesheet", "/spritesheet.png", {
                 sliceX: 39,
                 sliceY: 31,
@@ -109,10 +107,47 @@ export default function GamePage() {
                         }
                     }
                 }
+                k.onUpdate(()=>{
+                    let dx=0;
+                    let dy=0;
+                    if(k.isKeyDown("a"))
+                    {
+                        dx=-player.speed;
+                        player.flipX=true;
+                        player.play("walk-side-6");
+                        player.direction="side";
+                    }
+                    if(k.isKeyDown("d"))
+                    {
+                        dx=player.speed;
+                        player.flipX=false;
+                        player.play("walk-side-6");
+                        player.direction="side";
+                    }
+                    if(k.isKeyDown("w"))
+                    {
+                        dy=-player.speed;
+                        player.play("walk-up-6");
+                        player.direction="up";
+                    }
+                    if(k.isKeyDown("s"))
+                    {
+                        dy=player.speed;
+                        player.play("walk-down-6");
+                        player.direction="down";
+                    }
+                    
+                    if (dx !== 0 || dy !== 0) {
+                        player.move(dx , dy);
+                      }
+                      else
+                    {
+                        player.play("walk-"+player.direction+"-6");
+                    }
+                })
             });
             k.go("main");
         }
-
         // Cleanup on unmount
         return () => {
             if (k) k.destroyAll();
