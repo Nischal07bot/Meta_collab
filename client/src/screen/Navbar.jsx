@@ -1,7 +1,8 @@
 import React from 'react';
 import {useEffect,useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 const Navbar = () => {
-
+  const navigate=useNavigate();
   return (
     <nav className={`fixed top-5 left-0 w-full z-50 flex justify-between items-center p-10  bg-transparent text-white transition-colors duration-500`}>
       {/* Logo */}
@@ -19,7 +20,7 @@ const Navbar = () => {
           <a href="#" className="hover:text-gray-400">About</a>
           <a href="#" className="hover:text-gray-400">Contact</a>
         </div>
-        <button className="bg-green-300 text-blue-800 w-20 h-10 px-5 py-2 rounded-lg font-semibold hover:bg-green-500 hover:text-white transition-colors">
+        <button onClick={()=>navigate("/login")} className="bg-green-300 text-blue-800 w-20 h-10 px-5 py-2 rounded-lg font-semibold hover:bg-green-500 hover:text-white transition-colors">
           Sign Up
         </button>
       </div>
