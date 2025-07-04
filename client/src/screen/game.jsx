@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import useState from 'react'
 import kaboom from "kaboom"
 import { scaleFactor } from "../scalefactor.js"
-
+import {io} from "socket.io-client"
 function setupsprite(startidx)
 {
     return {
@@ -20,9 +20,12 @@ let arr = [936, 940, 944, 948, 952, 956, 960, 964];
 export default function GamePage() {
     const canvasRef = useRef(null);
     const avatar = useRef(null);
+    let avataridx=0;
     useEffect(() => {
+        const socket=io("http://localhost:3000");
         let k;
         let animss = {};
+        let others={};
         for (let i = 0; i < arr.length; i++) {
             let anims = setupsprite(arr[i]);
             for (let key in anims) {
@@ -75,6 +78,47 @@ export default function GamePage() {
                         direction:"down",
                      }
                 ])
+        socket.on("otherplayers",(data)=>{
+                for(const id in data)
+                {
+                    if (Object.prototype.hasOwnProperty.call(data, id))
+                    {
+                        if(id===socket.id) continue;
+                        spawnplayer(id,data[id]);
+                    }
+                }
+        })
+        socket.on("currentplayer",(data)=>{
+            spawnplayer(data.id,data.state);
+        })
+        socket.on("playermove",(data)=>{
+            const playermov=others[data.id];
+            if(playermov)
+            {
+                playermov.pos=k.vec2(data.state.x,data.state.y);
+                playermov.play("walk-"+data.dir+"-6");
+                playermov.direction=data.dir;
+            }
+            others[data.id]=playermov;
+        })
+        function spawnplayer(id,state)
+        {
+            const player=k.add([
+                k.sprite("spritesheet",{anim:"idle-down-6"}),
+                k.area({
+                    shape:new k.Rect(k.vec2(0,3),10,10),
+                }),
+                k.body(),
+                k.anchor("center"),
+                k.pos(map.pos.x+state.x,map.pos.y+state.y),
+                k.scale(3),
+                 {
+                    speed:150,
+                    direction:"down",
+                 }
+            ]);
+            others[id]=player;
+        }
                 for(const layer of layers){
                     if(layer.name === "boundaries"){
                         for(const boundary of layer.objects){
@@ -139,8 +183,9 @@ export default function GamePage() {
                     
                     if (dx !== 0 || dy !== 0) {
                         player.move(dx , dy);
-                      }
-                      else
+                        socket.emit("move",{x:player.pos.x,y:player.pos.y,avataridx:avataridx,direction:player.direction});
+                    }
+                        else
                     {
                         player.play("walk-"+player.direction+"-6");
                     }
@@ -151,6 +196,8 @@ export default function GamePage() {
         // Cleanup on unmount
         return () => {
             if (k) k.destroyAll();
+            socket.disconnect();
+            Object.values(others).forEach(o => o.destroy());
         };
     }, []);
     
