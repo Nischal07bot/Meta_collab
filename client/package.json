@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
+    "kaboom": "^3000.1.17",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3",
     "tailwind-scrollbar-hide": "^4.0.0",
-    "tailwindcss": "^4.1.10"
+    "tailwindcss": "^4.1.10",
+    "terser": "^5.43.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
