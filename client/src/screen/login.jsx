@@ -12,7 +12,7 @@ export default function Login() {
       {
         console.log(res.data);
         localStorage.setItem("token",res.data.token);
-        navigate("/game");
+        navigate("/roomcr");
       }
     })
   };
