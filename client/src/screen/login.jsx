@@ -16,7 +16,6 @@ export default function Login() {
       }
     })
   };
-
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-indigo-950 to-blue-750">
   <div className="flex flex-col items-center gap-4 justify-center bg-indigo-950 rounded-2xl shadow-2xl p-8 max-w-md w-full min-h-[24rem] ">

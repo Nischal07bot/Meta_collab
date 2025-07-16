@@ -5,6 +5,9 @@ import {createServer} from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import app from "./app.js"
+import mediasoup from "mediasoup";
+dotenv.config();
+import {createWorker,worker,router} from "./mediasoup-config.js";
 const server=createServer(app);
 const io=new Server(server,{
     cors:{
@@ -13,6 +16,10 @@ const io=new Server(server,{
         credentials:true,
     },
 });
+
+(async()=>{
+    createWorker();
+})();
 
 const players={};
 io.on("connection",(socket)=>{
@@ -27,12 +34,49 @@ io.on("connection",(socket)=>{
         let direction=data.direction;
         socket.broadcast.emit("playermove",{id:socket.id,state:players[socket.id],dir:direction});
     })
+
+    socket.on("joinroom",async (roomid,callback)=>{
+        console.log("Client joined room",roomid);
+        const transport=await createWebRtcTransport(router);
+        callback({ transportOptions: transport });
+
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Client disconnected');
+      });
+
+
+
     socket.on("disconnect",()=>{
         console.log("a user disconnected",socket.id);
         delete players[socket.id];
         io.emit("playerdisconnect",socket.id);
     })
 });
+
+const createWebRtcTransport = async (router) => {
+    const transport = await router.createWebRtcTransport({
+        listenIps: [{ ip: '0.0.0.0', announcedIp: '192.168.1.100'}],
+      enableUdp: true,
+      enableTcp: true,
+      preferUdp: true,
+    });
+
+    transport.on('dtlsstatechange', dtlsState => {
+      if (dtlsState === 'closed') {
+        transport.close();
+      }
+    });
+
+    transport.on('close', () => {
+      console.log('Transport closed');
+    });
+
+    return transport;
+  };
+
+
 const PORT=process.env.PORT || 3000;
 
 server.listen(PORT,()=>{
