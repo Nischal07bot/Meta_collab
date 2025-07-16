@@ -3,6 +3,7 @@ import useState from 'react'
 import kaboom from "kaboom"
 import { scaleFactor } from "../scalefactor.js"
 import {io} from "socket.io-client"
+import {useSocket} from "../Context/Socketprovide.jsx"
 function setupsprite(startidx)
 {
     return {
@@ -22,7 +23,7 @@ export default function GamePage() {
     const avatar = useRef(null);
     let avataridx=0;
     useEffect(() => {
-        const socket=io("http://localhost:3000");
+       const socket=useSocket();
         let k;
         let animss = {};
         let others={};
