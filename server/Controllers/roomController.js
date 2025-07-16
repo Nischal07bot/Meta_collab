@@ -9,7 +9,6 @@ export const createRoom=async(req,res)=>{
         roompassword:hashedPassword,
         roomId:uuidv4(),
         owner:req.user._id,
-        createdAt:Date.now(),
         players:[req.user._id]
     });
     try{
@@ -40,7 +39,7 @@ export const joinRoom=async(req,res)=>{
         {
             return res.status(401).json({message:"Invalid password"});
         }
-        if(room.players.includes(req.user._id))
+        if(room.players.map(id=>id.toString()).includes(req.user._id.toString()))
         {
             return res.status(400).json({message:"You are already in this room"});
         }

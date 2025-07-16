@@ -29,7 +29,7 @@ const roomSchema=new mongoose.Schema({
         ref:"User",
     }]
 });
-roomSchema.index({owner:1,roomId:1},{unique:true});
+roomSchema.index({owner:1,roomName:1},{unique:true});
 roomSchema.statics.hashPassword=async function(password)
 {
     return await bcrypt.hash(password,5);
