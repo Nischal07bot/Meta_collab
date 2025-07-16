@@ -6,14 +6,16 @@ export default function roomcr() {
     const socket=useSocket();
     const navigate=useNavigate();
     const [roomPassword, setroomPassword] = useState("");
+    const [roomPasswordjoin,setroomPasswordjoin]=useState("");
     const [roomId,setroomId]=useState("");
     const [roomName,setroomName]=useState("");
     const handleCreateRoom=()=>{
-        console.log("create room");
+        
         navigate("/lobby");
     }
     const handleJoinRoom=()=>{
-        console.log("join room" );
+       
+        navigate("/lobby");
     }
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-indigo-950 to-blue-750 gap-4">
@@ -65,8 +67,8 @@ export default function roomcr() {
             <input
               type="text"
               placeholder="Room Password"
-              value={roomPassword}
-              onChange={(e) => setroomPassword(e.target.value)}
+              value={roomPasswordjoin}
+              onChange={(e) => setroomPasswordjoin(e.target.value)}
               className="w-60 h-10 px-8 py-2 mt-4 p-2 gap-8 rounded-lg text-white bg-blue-900 border border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
