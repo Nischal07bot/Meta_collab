@@ -1,12 +1,16 @@
 import React, { useEffect,useState } from "react" 
 import { useSocket } from "../Context/Socketprovide"
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 export default function roomcr() {
     const socket=useSocket();
+    const navigate=useNavigate();
     const [roomPassword, setroomPassword] = useState("");
     const [roomId,setroomId]=useState("");
     const [roomName,setroomName]=useState("");
     const handleCreateRoom=()=>{
         console.log("create room");
+        navigate("/lobby");
     }
     const handleJoinRoom=()=>{
         console.log("join room" );

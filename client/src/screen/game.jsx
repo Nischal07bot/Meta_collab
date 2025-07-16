@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react'
-import useState from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import kaboom from "kaboom"
 import { scaleFactor } from "../scalefactor.js"
 import {io} from "socket.io-client"
@@ -16,14 +15,16 @@ function setupsprite(startidx)
     };
 }
 
+
 let arr = [936, 940, 944, 948, 952, 956, 960, 964];
+
 
 export default function GamePage() {
     const canvasRef = useRef(null);
     const avatar = useRef(null);
     let avataridx=0;
+    const socket=useSocket();
     useEffect(() => {
-       const socket=useSocket();
         let k;
         let animss = {};
         let others={};

@@ -4,6 +4,7 @@ import GamePage from "./screen/game";
 import Login from "./screen/login";
 import Signup from  "./screen/signup"
 import Roomcr from "./screen/Roomcr"
+import Playerlist from "./screen/Lobby"
 function App() {  
   return (
     <Routes>
@@ -12,6 +13,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/roomcr" element={<Roomcr />} />
+      <Route path="/lobby" element={<Playerlist />} />
     </Routes>
   );
 }
