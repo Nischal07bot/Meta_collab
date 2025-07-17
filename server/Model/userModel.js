@@ -26,7 +26,7 @@ userSchema.methods.isValidPassword=async function(password)
 }
 userSchema.methods.generateToken=function()
 {
-    return jwt.sign({email:this.email},process.env.JWT_SECRET,{expiresIn:"1h"});
+    return jwt.sign({email:this.email,id:this._id},process.env.JWT_SECRET,{expiresIn:"1h"});
 }
 const userModel=mongoose.model("User",userSchema);
 export default userModel;

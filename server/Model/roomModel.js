@@ -6,7 +6,7 @@ const roomSchema=new mongoose.Schema({
         type:String,
         required:true,
     },
-    roompassword:{
+    roomPassword:{
         type:String,
         required:true,
     },
@@ -37,7 +37,7 @@ roomSchema.statics.hashPassword=async function(password)
 }
 roomSchema.methods.isValidPassword=async function(password)
 {
-    return await bcrypt.compare(password,this.roompassword);
+    return await bcrypt.compare(password,this.roomPassword);
 }
 
 const roomModel=mongoose.model("Room",roomSchema);

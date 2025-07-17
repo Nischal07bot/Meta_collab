@@ -1,8 +1,10 @@
 import * as roomController from "../Controllers/roomController.js";
 import {Router} from "express";
 import {body} from "express-validator";
+import { authmiddleware } from "../Middleware/authmiddleware.js";
 const router=Router();
-router.post("/create",roomController.createRoom);
+router.post("/create",authmiddleware,roomController.createRoom);
 //router.get("/getrooms",roomController.getRooms);
-router.post("/joinroom",roomController.joinRoom);
+router.post("/joinroom",authmiddleware,roomController.joinRoom);
+router.get("/getplayers",authmiddleware,roomController.getPlayers);
 export default router; 

@@ -10,6 +10,7 @@ export const createusercontroller=async(req,res)=>{
         return res.status(400).json({errors:errors.array()});
     }
     try{
+        console.log(req.body);
         const user=await userService.createUser(req.body);
         const token=user.generateToken();
         delete user._doc.password;
@@ -23,6 +24,7 @@ export const createusercontroller=async(req,res)=>{
 }
 export const logincontroller=async(req,res)=>{
     const errors=validationResult(req);
+    console.log(req.body);
     if(!errors.isEmpty())
     {
         return res.status(400).json({errors:errors.array()});
