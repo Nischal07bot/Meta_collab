@@ -46,7 +46,7 @@ export const joinRoom=async(req,res)=>{
         }
         if(room.players.map(id=>id.toString()).includes(req.user.id.toString()))
         {
-            return res.status(400).json({message:"You are already in this room",room});
+            return res.status(200).json({message:"You are already in this room",room});
         }
         room.players.push(req.user.id);
         await room.save();
