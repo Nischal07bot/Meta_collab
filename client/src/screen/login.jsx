@@ -1,19 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useUser } from "../Context/userContext";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const {user,setuser}=useUser();
   const navigate = useNavigate();
    const url="http://localhost:3000";
   const handleLogin = () => {
     axios.post(`${url}/users/login`,{email:username,password:password}).then((res)=>{
-      if(res.status===201)
-      {
+      
         console.log(res.data);
         localStorage.setItem("token",res.data.token);
+        setuser(res.data.user);
         navigate("/roomcr");
-      }
+    }).catch(err=>{
+      alert(err.response.data.message);
     })
   };
   return (

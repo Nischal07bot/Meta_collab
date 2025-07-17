@@ -2,20 +2,39 @@ import React, { useEffect,useState } from "react"
 import { useSocket } from "../Context/Socketprovide"
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useRoom } from "../Context/roomContext";
 export default function roomcr() {
     const socket=useSocket();
     const navigate=useNavigate();
+    const {roomid,setroomid}=useRoom();
+    const link="http://localhost:3000";
     const [roomPassword, setroomPassword] = useState("");
     const [roomPasswordjoin,setroomPasswordjoin]=useState("");
     const [roomId,setroomId]=useState("");
     const [roomName,setroomName]=useState("");
-    const handleCreateRoom=()=>{
-        
-        navigate("/lobby");
+    const handleCreateRoom=async ()=>{
+        const token = localStorage.getItem("token");
+        if (!token) { alert("Not logged in"); return; }
+        await axios.post(`${link}/room/create`,{roomName:roomName,roomPassword:roomPassword},{headers:{Authorization:`Bearer ${token}`}}).then(res=>{
+            console.log(res.data);
+            const roomIdd=res.data.room.roomId;
+            setroomid(roomIdd);
+            navigate(`/lobby`);
+        }).catch(err=>{
+            alert(err.response.data.message);
+        })
     }
-    const handleJoinRoom=()=>{
-       
-        navigate("/lobby");
+    const handleJoinRoom=async ()=>{
+        const token = localStorage.getItem("token");
+        if (!token) { alert("Not logged in"); return; }
+       await axios.post(`${link}/room/joinroom`,{roomId:roomId,roomPasswordjoin:roomPasswordjoin},{headers:{Authorization:`Bearer ${token}`}}).then(res=>{
+        console.log(res.data);
+        const roomIdd=res.data.room.roomId;
+        setroomid(roomIdd);
+        navigate(`/lobby`);
+       }).catch(err=>{
+        alert(err.response.data.message);
+       })
     }
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-indigo-950 to-blue-750 gap-4">

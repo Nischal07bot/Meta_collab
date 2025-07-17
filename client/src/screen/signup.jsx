@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useUser } from "../Context/userContext";
 export default function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const {user,setuser}=useUser();
   const navigate = useNavigate();
   const url="http://localhost:3000";
   const handleLogin = () => {
     axios.post(`${url}/users/register`,{email:username,password:password}).then((res)=>{
-      if(res.status===201)
-      {
-        console.log(res.data);
-        localStorage.setItem("token",res.data.token);
-        navigate("/login");
-      }
+      console.log(res.data);
+      localStorage.setItem("token",res.data.token);
+      setuser(res.data.user);
+      navigate("/login");
+    }).catch(err=>{
+      alert(err.response.data.message);
     })
   };
 
