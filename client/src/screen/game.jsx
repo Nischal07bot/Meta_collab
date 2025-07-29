@@ -5,6 +5,8 @@ import { scaleFactor } from "../scalefactor.js"
 import {io} from "socket.io-client"
 import {useContext} from "react"
 import {useRoom} from "../Context/roomContext.jsx"
+import VideoConference from './VideoConference.jsx'
+
 function setupsprite(startidx)
 {
     return {
@@ -17,16 +19,60 @@ function setupsprite(startidx)
     };
 }
 
+
 let arr = [936, 940, 944, 948, 952, 956, 960, 964];
+
 
 export default function GamePage() {
     const canvasRef = useRef(null);
     const avatar = useRef(null);
     let avataridx=0;
     const {roomid}=useRoom();
+    const [showVideoCall, setShowVideoCall] = useState(false);
+    const [isInCall, setIsInCall] = useState(false);
+    const [socket, setSocket] = useState(null);
+
     useEffect(() => {
-        const socket=io("http://localhost:3000");
-        socket.emit("joinroom", roomid);
+        const socketInstance = io("http://localhost:3000");
+        
+        // Add callback function to joinroom event
+        socketInstance.emit("joinroom", roomid, (response) => {
+            console.log("Joined room response:", response);
+        });
+        
+        setSocket(socketInstance);
+
+        // Add global callStarted listener for debugging
+        socketInstance.on("callStarted", (data) => {
+            console.log("GLOBAL CALL STARTED RECEIVED:", data);
+            alert(`Call started by ${data.startedBy}! You should join automatically.`);
+            
+            setIsInCall(true);
+            setShowVideoCall(true);
+            
+            // Automatically join the call for all participants
+            socketInstance.emit("joinCall", (response) => {
+                if (response.success) {
+                    console.log("Automatically joined call:", response);
+                } else {
+                    console.error("Failed to join call:", response.error);
+                }
+            });
+        });
+
+        // Video call event listeners
+        socketInstance.on("callEnded", (data) => {
+            console.log("Call ended:", data);
+            setIsInCall(false);
+            setShowVideoCall(false);
+        });
+        socketInstance.on("playerdisconnect",(data)=>{
+            console.log("Player disconnected:", data);
+            setIsInCall(false);
+            setShowVideoCall(false);
+            Object.values(others).forEach(o => o.destroy());
+        });
+
         let k;
         let animss = {};
         let others={};
@@ -82,21 +128,24 @@ export default function GamePage() {
                         direction:"down",
                      }
                 ])
-        socket.on("otherplayers",(data)=>{
+
+
+
+        ////socket logic ,.....
+        socketInstance.on("otherplayers",(data)=>{
                 for(const id in data)
                 {
                     if (Object.prototype.hasOwnProperty.call(data, id))
                     {
-                        if(id===socket.id) continue;
+                        if(id===socketInstance.id) continue;
                         spawnplayer(id,data[id]);
                     }
                 }
         })
-        
-        socket.on("currentplayer",(data)=>{
+        socketInstance.on("currentplayer",(data)=>{
             spawnplayer(data.id,data.state);
         })
-        socket.on("playermove",(data)=>{
+        socketInstance.on("playermove",(data)=>{
             const playermov=others[data.id];
             if(playermov)
             {
@@ -106,6 +155,41 @@ export default function GamePage() {
             }
             others[data.id]=playermov;
         })
+        socketInstance.on('roomJoined', (data) => {
+            console.log(`Joined room ${data.roomId} as ${data.username}`);
+            // Initialize media streams and UI updates here
+          });
+
+        // Video call event listeners
+        socketInstance.on("callStarted", (data) => {
+            console.log("Call started:", data);
+            setIsInCall(true);
+            setShowVideoCall(true);
+            
+            // Automatically join the call for all participants
+            socketInstance.emit("joinCall", (response) => {
+                if (response.success) {
+                    console.log("Automatically joined call:", response);
+                    // The VideoConference component will handle the rest
+                } else {
+                    console.error("Failed to join call:", response.error);
+                }
+            });
+        });
+
+        socketInstance.on("callEnded", (data) => {
+            console.log("Call ended:", data);
+            setIsInCall(false);
+            setShowVideoCall(false);
+        });
+        socketInstance.on("playerdisconnect",(data)=>{
+            console.log("Player disconnected:", data);
+            setIsInCall(false);
+            setShowVideoCall(false);
+            Object.values(others).forEach(o => o.destroy());
+        });
+        //////socket logic ends here 
+
         function spawnplayer(id,state)
         {
             const player=k.add([
@@ -188,7 +272,7 @@ export default function GamePage() {
                     
                     if (dx !== 0 || dy !== 0) {
                         player.move(dx , dy);
-                        socket.emit("move",{x:player.pos.x,y:player.pos.y,avataridx:avataridx,direction:player.direction});
+                        socketInstance.emit("move",{x:player.pos.x,y:player.pos.y,avataridx:avataridx,direction:player.direction});
                     }
                         else
                     {
@@ -201,14 +285,56 @@ export default function GamePage() {
         // Cleanup on unmount
         return () => {
             if (k) k.destroyAll();
-            socket.disconnect();
+            socketInstance.disconnect();
             Object.values(others).forEach(o => o.destroy());
         };
-    }, []);
+    }, [roomid]);
+
+    const handleStartCall = () => {
+        if (socket) {
+            socket.emit("startCall", (response) => {
+                if (response.success) {
+                    console.log("Call started successfully");
+                    setIsInCall(true);
+                    setShowVideoCall(true);
+                } else {
+                    console.error("Failed to start call:", response.error);
+                    alert("Failed to start video call");
+                }
+            });
+        }
+    };
+
+    const handleCloseVideoCall = () => {
+        setShowVideoCall(false);
+        setIsInCall(false);
+    };
     
     return (
-        <div className="flex justify-center items-center h-screen w-screen bg-violet-950 w-full h-full">
-            <canvas ref={canvasRef} id="game-canvas"></canvas>
+        <div className="relative flex justify-center items-center h-screen w-screen bg-violet-950">
+            <canvas ref={canvasRef} id="game-canvas" className="absolute inset-0"></canvas>
+            
+            {/* Call Button */}
+            <div className="absolute top-4 right-4 z-10">
+                <button
+                    onClick={handleStartCall}
+                    disabled={isInCall}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                        isInCall 
+                            ? 'bg-gray-500 text-gray-300 cursor-not-allowed' 
+                            : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                >
+                    {isInCall ? 'In Call' : '📞 Start Call'}
+                </button>
+            </div>
+
+            {/* Video Conference Modal */}
+            <VideoConference
+                isOpen={showVideoCall}
+                onClose={handleCloseVideoCall}
+                socket={socket}
+            />
         </div>
     );
 }

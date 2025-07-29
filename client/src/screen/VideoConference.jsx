@@ -1,25 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSocket } from '../Context/Socketprovide';
 
-const VideoConference = ({ isOpen, onClose, roomId }) => {
-    const socket = useSocket();
+const VideoConference = ({ isOpen, onClose, socket }) => {
     const [localStream, setLocalStream] = useState(null);
     const [remoteStreams, setRemoteStreams] = useState(new Map());
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
+    const [permissionDenied, setPermissionDenied] = useState(false);
     
     const localVideoRef = useRef(null);
     const localStreamRef = useRef(null);
 
     useEffect(() => {
-        if (!isOpen || !roomId) return;
+        if (!isOpen || !socket) return;
 
         const initializeCall = async () => {
             try {
-                // Get user media
+                setError(null);
+                setPermissionDenied(false);
+                
+                // Get user media with better error handling
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
                 });
                 
                 setLocalStream(stream);
@@ -29,11 +37,10 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // Join the call room
-                socket.emit('joinCall', roomId, async (response) => {
+                // Join the call
+                socket.emit('joinCall', async (response) => {
                     if (response.success) {
                         console.log('Joined call successfully');
-                        // Connect transport first
                         await connectTransport(response.transportOptions);
                     } else {
                         setError(response.error);
@@ -42,7 +49,17 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
 
             } catch (err) {
                 console.error('Error accessing media devices:', err);
-                setError('Could not access camera/microphone');
+                
+                if (err.name === 'NotAllowedError') {
+                    setPermissionDenied(true);
+                    setError('Camera/microphone access was denied. Please allow access and try again.');
+                } else if (err.name === 'NotFoundError') {
+                    setError('No camera or microphone found. Please check your devices.');
+                } else if (err.name === 'NotReadableError') {
+                    setError('Camera or microphone is already in use by another application.');
+                } else {
+                    setError('Could not access camera/microphone. Please check your browser settings.');
+                }
             }
         };
 
@@ -59,7 +76,7 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
             socket.off('newProducer');
             cleanup();
         };
-    }, [isOpen, roomId]);
+    }, [isOpen, socket]);
 
     const connectTransport = async (transportOptions) => {
         try {
@@ -67,7 +84,6 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
                 if (response.success) {
                     console.log('Transport connected successfully');
                     setIsConnected(true);
-                    // Start producing tracks after transport is connected
                     produceTracks(transportOptions.id);
                 } else {
                     setError(response.error);
@@ -165,9 +181,32 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
     };
 
     const endCall = () => {
-        socket.emit('endCall', roomId);
+        socket.emit('endCall');
         cleanup();
         onClose();
+    };
+
+    const retryMediaAccess = async () => {
+        try {
+            setError(null);
+            setPermissionDenied(false);
+            
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            
+            setLocalStream(stream);
+            localStreamRef.current = stream;
+            
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream;
+            }
+            
+        } catch (err) {
+            console.error('Retry failed:', err);
+            setError('Still cannot access camera/microphone. Please check browser settings.');
+        }
     };
 
     if (!isOpen) return null;
@@ -194,8 +233,17 @@ const VideoConference = ({ isOpen, onClose, roomId }) => {
                 </div>
 
                 {error && (
-                    <div className="bg-red-500 text-white p-3 rounded-lg mb-4">
-                        {error}
+                    <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
+                        <p className="font-semibold">Camera/Microphone Error</p>
+                        <p>{error}</p>
+                        {permissionDenied && (
+                            <button
+                                onClick={retryMediaAccess}
+                                className="mt-2 bg-white text-red-500 px-4 py-2 rounded hover:bg-gray-100"
+                            >
+                                Retry Access
+                            </button>
+                        )}
                     </div>
                 )}
 
