@@ -31,7 +31,7 @@ export default function GamePage() {
     const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        const socketInstance = io("http://localhost:3000");
+        const socketInstance = io(`${import.meta.env.VITE_BACKEND_URL}`);
         
         socketInstance.emit("joinroom", roomid, (response) => {
             console.log("Joined room response:", response);

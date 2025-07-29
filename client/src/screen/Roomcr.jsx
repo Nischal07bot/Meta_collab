@@ -7,7 +7,7 @@ export default function roomcr() {
     const socket=useSocket();
     const navigate=useNavigate();
     const {roomid,setroomid}=useRoom();
-    const link="http://localhost:3000";
+    const link=import.meta.env.VITE_BACKEND_URL;
     const [roomPassword, setroomPassword] = useState("");
     const [roomPasswordjoin,setroomPasswordjoin]=useState("");
     const [roomId,setroomId]=useState("");

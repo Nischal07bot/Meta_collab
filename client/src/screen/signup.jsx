@@ -7,7 +7,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const {user,setuser}=useUser();
   const navigate = useNavigate();
-  const url="http://localhost:3000";
+  const url=import.meta.env.VITE_BACKEND_URL;
   const handleLogin = () => {
     axios.post(`${url}/users/register`,{email:username,password:password}).then((res)=>{
       console.log(res.data);

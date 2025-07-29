@@ -8,7 +8,7 @@ export default function playerlist(){
     const navigate=useNavigate();
     const {roomid}=useRoom();
     //testing
-    const link="http://localhost:3000";
+    const link=import.meta.env.VITE_BACKEND_URL;
     useEffect(()=>{
         const token = localStorage.getItem("token");
         if (!token) { alert("Not logged in"); return; }
