@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
+import {useSocket} from "../Context/Socketprovide.jsx"
 import kaboom from "kaboom"
 import { scaleFactor } from "../scalefactor.js"
 import {io} from "socket.io-client"
-import {useSocket} from "../Context/Socketprovide.jsx"
+import {useContext} from "react"
+import {useRoom} from "../Context/roomContext.jsx"
 function setupsprite(startidx)
 {
     return {
@@ -15,16 +17,16 @@ function setupsprite(startidx)
     };
 }
 
-
 let arr = [936, 940, 944, 948, 952, 956, 960, 964];
-
 
 export default function GamePage() {
     const canvasRef = useRef(null);
     const avatar = useRef(null);
     let avataridx=0;
-    const socket=useSocket();
+    const {roomid}=useRoom();
     useEffect(() => {
+        const socket=io("http://localhost:3000");
+        socket.emit("joinroom", roomid);
         let k;
         let animss = {};
         let others={};
@@ -90,6 +92,7 @@ export default function GamePage() {
                     }
                 }
         })
+        
         socket.on("currentplayer",(data)=>{
             spawnplayer(data.id,data.state);
         })
