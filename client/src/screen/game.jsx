@@ -19,9 +19,7 @@ function setupsprite(startidx)
     };
 }
 
-
 let arr = [936, 940, 944, 948, 952, 956, 960, 964];
-
 
 export default function GamePage() {
     const canvasRef = useRef(null);
@@ -35,42 +33,32 @@ export default function GamePage() {
     useEffect(() => {
         const socketInstance = io("http://localhost:3000");
         
-        // Add callback function to joinroom event
         socketInstance.emit("joinroom", roomid, (response) => {
             console.log("Joined room response:", response);
         });
         
         setSocket(socketInstance);
 
-        // Add global callStarted listener for debugging
+        // Register callStarted listener ONCE, outside Kaboom
         socketInstance.on("callStarted", (data) => {
-            console.log("GLOBAL CALL STARTED RECEIVED:", data);
-            alert(`Call started by ${data.startedBy}! You should join automatically.`);
-            
+            console.log("Call started:", data);
             setIsInCall(true);
             setShowVideoCall(true);
             
-            // Automatically join the call for all participants
+            // Automatically join the call
             socketInstance.emit("joinCall", (response) => {
                 if (response.success) {
-                    console.log("Automatically joined call:", response);
+                    console.log("Automatically joined call");
                 } else {
                     console.error("Failed to join call:", response.error);
                 }
             });
         });
 
-        // Video call event listeners
         socketInstance.on("callEnded", (data) => {
             console.log("Call ended:", data);
             setIsInCall(false);
             setShowVideoCall(false);
-        });
-        socketInstance.on("playerdisconnect",(data)=>{
-            console.log("Player disconnected:", data);
-            setIsInCall(false);
-            setShowVideoCall(false);
-            Object.values(others).forEach(o => o.destroy());
         });
 
         let k;
@@ -129,85 +117,60 @@ export default function GamePage() {
                      }
                 ])
 
-
-
-        ////socket logic ,.....
-        socketInstance.on("otherplayers",(data)=>{
-                for(const id in data)
-                {
-                    if (Object.prototype.hasOwnProperty.call(data, id))
-                    {
-                        if(id===socketInstance.id) continue;
-                        spawnplayer(id,data[id]);
+                // Keep movement-related socket logic inside Kaboom
+                socketInstance.on("otherplayers",(data)=>{
+                    for(const id in data) {
+                        if (Object.prototype.hasOwnProperty.call(data, id)) {
+                            if(id===socketInstance.id) continue;
+                            spawnplayer(id,data[id]);
+                        }
                     }
+                })
+                
+                socketInstance.on("currentplayer",(data)=>{
+                    spawnplayer(data.id,data.state);
+                })
+                
+                socketInstance.on("playermove",(data)=>{
+                    const playermov=others[data.id];
+                    if(playermov) {
+                        playermov.pos=k.vec2(data.state.x,data.state.y);
+                        playermov.play("walk-"+data.dir+"-6");
+                        playermov.direction=data.dir;
+                    }
+                    others[data.id]=playermov;
+                })
+                
+                socketInstance.on('roomJoined', (data) => {
+                    console.log(`Joined room ${data.roomId} as ${data.username}`);
+                });
+
+                socketInstance.on("playerdisconnect",(data)=>{
+                    console.log("Player disconnected:", data);
+                    setIsInCall(false);
+                    setShowVideoCall(false);
+                    Object.values(others).forEach(o => o.destroy());
+                });
+
+                function spawnplayer(id,state)
+                {
+                    const player=k.add([
+                        k.sprite("spritesheet",{anim:"idle-down-6"}),
+                        k.area({
+                            shape:new k.Rect(k.vec2(0,3),10,10),
+                        }),
+                        k.body(),
+                        k.anchor("center"),
+                        k.pos(map.pos.x+state.x,map.pos.y+state.y),
+                        k.scale(3),
+                         {
+                            speed:150,
+                            direction:"down",
+                         }
+                    ]);
+                    others[id]=player;
                 }
-        })
-        socketInstance.on("currentplayer",(data)=>{
-            spawnplayer(data.id,data.state);
-        })
-        socketInstance.on("playermove",(data)=>{
-            const playermov=others[data.id];
-            if(playermov)
-            {
-                playermov.pos=k.vec2(data.state.x,data.state.y);
-                playermov.play("walk-"+data.dir+"-6");
-                playermov.direction=data.dir;
-            }
-            others[data.id]=playermov;
-        })
-        socketInstance.on('roomJoined', (data) => {
-            console.log(`Joined room ${data.roomId} as ${data.username}`);
-            // Initialize media streams and UI updates here
-          });
 
-        // Video call event listeners
-        socketInstance.on("callStarted", (data) => {
-            console.log("Call started:", data);
-            setIsInCall(true);
-            setShowVideoCall(true);
-            
-            // Automatically join the call for all participants
-            socketInstance.emit("joinCall", (response) => {
-                if (response.success) {
-                    console.log("Automatically joined call:", response);
-                    // The VideoConference component will handle the rest
-                } else {
-                    console.error("Failed to join call:", response.error);
-                }
-            });
-        });
-
-        socketInstance.on("callEnded", (data) => {
-            console.log("Call ended:", data);
-            setIsInCall(false);
-            setShowVideoCall(false);
-        });
-        socketInstance.on("playerdisconnect",(data)=>{
-            console.log("Player disconnected:", data);
-            setIsInCall(false);
-            setShowVideoCall(false);
-            Object.values(others).forEach(o => o.destroy());
-        });
-        //////socket logic ends here 
-
-        function spawnplayer(id,state)
-        {
-            const player=k.add([
-                k.sprite("spritesheet",{anim:"idle-down-6"}),
-                k.area({
-                    shape:new k.Rect(k.vec2(0,3),10,10),
-                }),
-                k.body(),
-                k.anchor("center"),
-                k.pos(map.pos.x+state.x,map.pos.y+state.y),
-                k.scale(3),
-                 {
-                    speed:150,
-                    direction:"down",
-                 }
-            ]);
-            others[id]=player;
-        }
                 for(const layer of layers){
                     if(layer.name === "boundaries"){
                         for(const boundary of layer.objects){
@@ -229,7 +192,6 @@ export default function GamePage() {
                     {
                         for(const entity of layer.objects)
                         {
-                            //only one entity here but there can be many 
                             if(entity.name === "player")
                             {
                                 console.log(entity.name);
@@ -282,6 +244,7 @@ export default function GamePage() {
             });
             k.go("main");
         }
+        
         // Cleanup on unmount
         return () => {
             if (k) k.destroyAll();

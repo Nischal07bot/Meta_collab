@@ -20,8 +20,8 @@ const initializeServer = async () => {
         origin: "http://localhost:5173",
         methods: ["GET", "POST"],
         credentials: true,
-      },
-    });
+    },
+});
 
 const rooms = {}; // roomId → { players: { socketId → state } }
 const transports = new Map(); // Store transports
@@ -209,6 +209,30 @@ io.on("connection", (socket) => {
 
     socket.on("endCall", () => {
       console.log(`Ending call in room ${roomId}`);
+
+      // Clean up transport
+      const transport = transports.get(socket.id);
+      if (transport) {
+        transport.close();
+        transports.delete(socket.id);
+      }
+
+      // Clean up producers
+      for (const [producerId, producerData] of producers.entries()) {
+        if (producerData.socketId === socket.id) {
+          producerData.producer.close();
+          producers.delete(producerId);
+        }
+      }
+
+      // Clean up consumers
+      for (const [consumerId, consumerData] of consumers.entries()) {
+        if (consumerData.socketId === socket.id) {
+          consumerData.consumer.close();
+          consumers.delete(consumerId);
+        }
+      }
+
       io.to(roomId).emit("callEnded", { roomId });
     });
 
@@ -243,25 +267,25 @@ io.on("connection", (socket) => {
 });
 
 const createWebRtcTransport = async (router) => {
-  const transport = await router.createWebRtcTransport({
+    const transport = await router.createWebRtcTransport({
     listenIps: [{ ip: '0.0.0.0', announcedIp: '192.168.1.100' }],
-    enableUdp: true,
-    enableTcp: true,
-    preferUdp: true,
-  });
+      enableUdp: true,
+      enableTcp: true,
+      preferUdp: true,
+    });
 
-  transport.on('dtlsstatechange', dtlsState => {
-    if (dtlsState === 'closed') {
-      transport.close();
-    }
-  });
+    transport.on('dtlsstatechange', dtlsState => {
+      if (dtlsState === 'closed') {
+        transport.close();
+      }
+    });
 
-  transport.on('close', () => {
-    console.log('Transport closed');
-  });
+    transport.on('close', () => {
+      console.log('Transport closed');
+    });
 
-  return transport;
-};
+    return transport;
+  };
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

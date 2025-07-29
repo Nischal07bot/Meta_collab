@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import * as mediasoupClient from 'mediasoup-client';
 
 const VideoConference = ({ isOpen, onClose, socket }) => {
     const [localStream, setLocalStream] = useState(null);
@@ -9,6 +10,11 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
     
     const localVideoRef = useRef(null);
     const localStreamRef = useRef(null);
+    const deviceRef = useRef(null);
+    const sendTransportRef = useRef(null);
+    const recvTransportRef = useRef(null);
+    const producersRef = useRef(new Map());
+    const consumersRef = useRef(new Map());
 
     useEffect(() => {
         if (!isOpen || !socket) return;
@@ -18,16 +24,10 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
                 setError(null);
                 setPermissionDenied(false);
                 
-                // Get user media with better error handling
+                // Get user media
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true
-                    }
+                    video: true,
+                    audio: true
                 });
                 
                 setLocalStream(stream);
@@ -37,11 +37,18 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
                     localVideoRef.current.srcObject = stream;
                 }
 
+                // Initialize mediasoup device
+                deviceRef.current = new mediasoupClient.Device();
+
                 // Join the call
                 socket.emit('joinCall', async (response) => {
                     if (response.success) {
                         console.log('Joined call successfully');
-                        await connectTransport(response.transportOptions);
+                        
+                        // Load device with router capabilities
+                        await deviceRef.current.load({ routerRtpCapabilities: response.rtpCapabilities });
+                        
+                        await createSendTransport(response.transportOptions);
                     } else {
                         setError(response.error);
                     }
@@ -58,70 +65,73 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
                 } else if (err.name === 'NotReadableError') {
                     setError('Camera or microphone is already in use by another application.');
                 } else {
-                    setError('Could not access camera/microphone. Please check your browser settings.');
+                    setError(`Could not access camera/microphone: ${err.message}`);
                 }
             }
         };
 
         initializeCall();
 
-        // Socket event listeners
-        socket.on('callStarted', handleCallStarted);
-        socket.on('callEnded', handleCallEnded);
-        socket.on('newProducer', handleNewProducer);
-
         return () => {
-            socket.off('callStarted');
-            socket.off('callEnded');
-            socket.off('newProducer');
             cleanup();
         };
     }, [isOpen, socket]);
 
-    const connectTransport = async (transportOptions) => {
+    const createSendTransport = async (transportOptions) => {
         try {
-            socket.emit('connectTransport', transportOptions.id, transportOptions.dtlsParameters, (response) => {
-                if (response.success) {
-                    console.log('Transport connected successfully');
-                    setIsConnected(true);
-                    produceTracks(transportOptions.id);
-                } else {
-                    setError(response.error);
-                }
+            sendTransportRef.current = deviceRef.current.createSendTransport(transportOptions);
+
+            sendTransportRef.current.on('connect', ({ dtlsParameters }, callback, errback) => {
+                socket.emit('connectTransport', transportOptions.id, dtlsParameters, (response) => {
+                    if (response.success) {
+                        callback();
+                    } else {
+                        errback(new Error(response.error));
+                    }
+                });
             });
+
+            sendTransportRef.current.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
+                socket.emit('produce', transportOptions.id, kind, { rtpParameters }, (response) => {
+                    if (response.success) {
+                        callback({ id: response.producerId });
+                    } else {
+                        errback(new Error(response.error));
+                    }
+                });
+            });
+
+            // Produce tracks
+            const tracks = localStreamRef.current.getTracks();
+            for (const track of tracks) {
+                const producer = await sendTransportRef.current.produce({ track });
+                producersRef.current.set(producer.id, producer);
+            }
+
+            setIsConnected(true);
+
         } catch (err) {
-            console.error('Error connecting transport:', err);
-            setError('Failed to connect transport');
+            console.error('Error creating send transport:', err);
+            setError('Failed to create transport');
         }
     };
 
-    const produceTracks = async (transportId) => {
+    const createRecvTransport = async (transportOptions) => {
         try {
-            if (!localStreamRef.current) return;
+            recvTransportRef.current = deviceRef.current.createRecvTransport(transportOptions);
 
-            const tracks = localStreamRef.current.getTracks();
-            
-            for (const track of tracks) {
-                const params = {
-                    track: track,
-                    encodings: [
-                        { maxBitrate: 100000, scalabilityMode: 'S1T3' }
-                    ],
-                    codecOptions: {
-                        videoGoogleStartBitrate: 1000
-                    }
-                };
-
-                socket.emit('produce', transportId, track.kind, params, (response) => {
+            recvTransportRef.current.on('connect', ({ dtlsParameters }, callback, errback) => {
+                socket.emit('connectTransport', transportOptions.id, dtlsParameters, (response) => {
                     if (response.success) {
-                        console.log('Producer created:', response.producerId);
+                        callback();
                     } else {
-                        console.error('Failed to create producer:', response.error);
+                        errback(new Error(response.error));
                     }
                 });
-            }
+            });
+
         } catch (err) {
-            console.error('Error producing tracks:', err);
+            console.error('Error creating receive transport:', err);
         }
     };
 
@@ -139,22 +149,41 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
         try {
             console.log('New producer available:', data);
             
-            // Create consumer for the new producer
-            socket.emit('consume', data.producerId, (response) => {
+            if (!recvTransportRef.current) {
+                // Create receive transport if not exists
+                socket.emit('joinCall', async (response) => {
+                    if (response.success) {
+                        await createRecvTransport(response.transportOptions);
+                        await consumeProducer(data.producerId);
+                    }
+                });
+            } else {
+                await consumeProducer(data.producerId);
+            }
+        } catch (err) {
+            console.error('Error handling new producer:', err);
+        }
+    };
+
+    const consumeProducer = async (producerId) => {
+        try {
+            socket.emit('consume', producerId, async (response) => {
                 if (response.success) {
-                    console.log('Consumer created:', response.consumerId);
-                    
-                    // Create a new MediaStream for this consumer
-                    const stream = new MediaStream();
-                    
-                    // Add the track to the stream
-                    const track = new MediaStreamTrack();
-                    stream.addTrack(track);
-                    
-                    setRemoteStreams(prev => new Map(prev.set(response.consumerId, stream)));
-                    
+                    const consumer = await recvTransportRef.current.consume({
+                        id: response.consumerId,
+                        producerId: response.producerId,
+                        kind: response.kind,
+                        rtpParameters: response.rtpParameters
+                    });
+
+                    consumersRef.current.set(consumer.id, consumer);
+
+                    // Create a new MediaStream for the consumer
+                    const stream = new MediaStream([consumer.track]);
+                    setRemoteStreams(prev => new Map(prev.set(consumer.id, stream)));
+
                     // Resume the consumer
-                    socket.emit('resumeConsumer', response.consumerId, (resumeResponse) => {
+                    socket.emit('resumeConsumer', consumer.id, (resumeResponse) => {
                         if (resumeResponse.success) {
                             console.log('Consumer resumed successfully');
                         }
@@ -164,18 +193,37 @@ const VideoConference = ({ isOpen, onClose, socket }) => {
                 }
             });
         } catch (err) {
-            console.error('Error handling new producer:', err);
+            console.error('Error consuming producer:', err);
         }
     };
 
     const cleanup = () => {
-        // Stop local stream
+        // Stop local stream tracks
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => track.stop());
-            setLocalStream(null);
+            localStreamRef.current = null;
         }
 
-        // Clear remote streams
+        // Close producers
+        producersRef.current.forEach(producer => producer.close());
+        producersRef.current.clear();
+
+        // Close consumers
+        consumersRef.current.forEach(consumer => consumer.close());
+        consumersRef.current.clear();
+
+        // Close transports
+        if (sendTransportRef.current) {
+            sendTransportRef.current.close();
+            sendTransportRef.current = null;
+        }
+        if (recvTransportRef.current) {
+            recvTransportRef.current.close();
+            recvTransportRef.current = null;
+        }
+
+        // Clear state
+        setLocalStream(null);
         setRemoteStreams(new Map());
         setIsConnected(false);
     };
