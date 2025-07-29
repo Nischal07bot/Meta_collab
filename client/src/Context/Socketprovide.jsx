@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useEffect, useState } from "react";
+import React, { createContext, useContext, useRef, useEffect } from "react";
 import { io } from "socket.io-client";
 
 const SocketContext = createContext(null);
@@ -6,24 +6,22 @@ const SocketContext = createContext(null);
 export const useSocket = () => {
     const socket = useContext(SocketContext);
     if (!socket) {
-        throw new Error("SocketContext is not available");
+        throw new Error("Socket not found. Wrap your app in <SocketProvider>");
     }
     return socket;
 };
 
 export const SocketProvider = ({ children }) => {
-    const [socket, setSocket] = useState(null);
     const socketRef = useRef(null);
 
-    useEffect(() => {
-        // Avoid duplicate connections
-        if (!socketRef.current) {
-            socketRef.current = io("http://localhost:3000", {
-                transports: ["websocket"],
-            });
-            setSocket(socketRef.current);
-        }
+    if (!socketRef.current) {
+        socketRef.current = io("http://localhost:3000", {
+            transports: ["websocket"],
+        });
+    }
 
+    useEffect(() => {
+       
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
@@ -33,7 +31,7 @@ export const SocketProvider = ({ children }) => {
     }, []);
 
     return (
-        <SocketContext.Provider value={socket}>
+        <SocketContext.Provider value={socketRef.current}>
             {children}
         </SocketContext.Provider>
     );

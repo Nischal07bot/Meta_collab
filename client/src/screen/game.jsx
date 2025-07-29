@@ -97,11 +97,7 @@ export default function GamePage() {
                     k.pos(value,0),
                     k.scale(2),
                 ])
-                /*
-                setcamscale(k);
-                k.onResize(() => {
-                    setcamscale(k);
-                });*/
+
                 const player=k.make([
                     k.sprite("spritesheet",{anim:"idle-down-6"}),
                     k.area({
